@@ -1,68 +1,132 @@
-const monsterHealthBar = document.getElementById("monster-health");
-const playerHealthBar = document.getElementById("player-health");
-const playerStaminaBar = document.getElementById("player-stamina");
-const totalmoney = document.getElementById("player-cash");
-const bonusLifeEl = document.getElementById("bonus-life");
+const ATTACK_VALUE = 10;
+const STRONG_ATTACK_VALUE = 17;
+const ATTACK_STAMINA_VALUE = 10;
+const STRONG_ATTACK_STAMINA_VALUE = 20;
+const MONSTER_ATTACK_VALUE = 14;
+const HEAL_VALUE = 20;
+const STAMINA_REFILL = 20;
+const HEALTH_COST = 25;
+const STAMINA_COST = 15;
 
-const attackBtn = document.getElementById("attack-btn");
-const strongAttackBtn = document.getElementById("strong-attack-btn");
-const healBtn = document.getElementById("heal-btn");
-const staminaBTN = document.getElementById("stamina-btn");
-const logBtn = document.getElementById("log-btn");
+//const herosName = prompt('Hvað heitir hetjan þín?')
+const enteredHealth = prompt("Hámarks líf fyrir þig og skrimslið.", "100");
+const enteredStamina = prompt("Hámarks þol fyrir þig og skrimslið.", "100");
+const enteredMoney = prompt("Hámarks peningur sem hetjuna þína", "100");
 
-function adjustHealthBars(maxLife) {
-  monsterHealthBar.max = maxLife;
-  monsterHealthBar.value = maxLife;
-  playerHealthBar.max = maxLife;
-  playerHealthBar.value = maxLife;
+let chosenMaxLife = parseInt(enteredHealth);
+let chosenMaxStamina = parseInt(enteredStamina);
+let chosenMaxMoney = parseInt(enteredMoney);
+
+if (isNaN(chosenMaxLife) || chosenMaxLife <= 0) {
+  chosenMaxLife = 100;
 }
 
-function adjustStaminaBars(maxStamina) {
-  playerStaminaBar.max = maxStamina;
-  playerStaminaBar.vale = maxStamina;
+let currentMonsterHealth = chosenMaxLife;
+let currentPlayerHealth = chosenMaxLife;
+let currentPlayerStamina = chosenMaxStamina;
+let currentPlayersMoney = chosenMaxMoney;
+let hasBonusLife = true;
+
+adjustHealthBars(chosenMaxLife);
+adjustStaminaBars(chosenMaxStamina);
+
+function reset() {
+  currentMonsterHealth = chosenMaxLife;
+  currentPlayerHealth = chosenMaxLife;
+  currentPlayerStamina = chosenMaxStamina;
+  currentPlayersMoney = chosenMaxStamina;
+  resetGame(chosenMaxLife, chosenMaxStamina, chosenMaxMoney);
 }
 
-function dealMonsterDamage(damage) {
-  const dealtDamage = Math.random() * damage;
-  monsterHealthBar.value = +monsterHealthBar.value - dealtDamage;
-  return dealtDamage;
+function endRound() {
+  const initialPlayerHealth = currentPlayerHealth;
+  const playerDamage = dealPlayerDamage(MONSTER_ATTACK_VALUE);
+  currentPlayerHealth -= playerDamage;
+
+  if (currentPlayerHealth <= 0 && hasBonusLife) {
+    hasBonusLife = false;
+    removeBonusLife();
+    currentPlayerHealth = initialPlayerHealth;
+    setPlayerHealth(initialPlayerHealth);
+    alert("Þú ert heppin að þú átt auka líf, annars hefðiru tapað!");
+  }
+
+  if (currentPlayerStamina <= 0) {
+    alert("Þú hefur ekki meira þol");
+  } else if (currentMonsterHealth <= 0 && currentPlayerHealth > 0) {
+    alert("Þú sigraðir skrímslið!");
+  } else if (currentPlayerHealth <= 0 && currentMonsterHealth > 0) {
+    alert("Þú tapaðir fyrir skrímslinu!");
+  } else if (currentPlayerHealth <= 0 && currentMonsterHealth <= 0) {
+    alert("Þú gerðir jafntefli við skrímslið");
+  }
+
+  if (currentMonsterHealth <= 0 || currentPlayerHealth <= 0) {
+    reset();
+  }
 }
 
-function dealPlayerDamage(damage) {
-  const dealtDamage = Math.random() * damage;
-  playerHealthBar.value = +playerHealthBar.value - dealtDamage;
-  return dealtDamage;
+function attackMonster(mode) {
+  let maxDamage;
+  if (mode === "ATTACK") {
+    maxDamage = ATTACK_VALUE;
+    staminaLost = ATTACK_STAMINA_VALUE;
+  } else if (mode === "STRONG_ATTACK") {
+    maxDamage = STRONG_ATTACK_VALUE;
+    staminaLost = STRONG_ATTACK_STAMINA_VALUE;
+  }
+  const damage = dealMonsterDamage(maxDamage);
+  const lost_stamina = staminaCost(staminaLost);
+  currentMonsterHealth -= damage;
+  currentPlayerStamina -= lost_stamina;
+  endRound();
 }
 
-function staminaCost(stamina) {
-  const staminaCost = Math.random() * stamina;
-  playerStaminaBar.value = +playerStaminaBar.value - staminaCost;
-  return staminaCost;
+function attackHandler() {
+  attackMonster("ATTACK");
 }
 
-function spendMoney(cost) {
-  const moneySpent = cost;
-  totalmoney.value = +totalmoney.value - moneySpent;
-  return moneySpent;
+function strongAttackHandler() {
+  attackMonster("STRONG_ATTACK");
 }
 
-function increasePlayerHealth(healValue) {
-  playerHealthBar.value = +playerHealthBar.value + healValue;
+function healPlayerHandler() {
+  let healValue;
+  if (currentPlayerHealth >= chosenMaxLife - HEAL_VALUE) {
+    alert("Þú getur ekki læknað þig meira en hámarks lífið þitt");
+    healValue = chosenMaxLife - currentPlayerHealth;
+  } else if (currentPlayersMoney <= 0) {
+    alert("Þú átt ekki meiri pening");
+  } else {
+    healValue = HEAL_VALUE;
+    cost = HEALTH_COST;
+  }
+  increasePlayerHealth(HEAL_VALUE);
+  currentPlayerHealth += HEAL_VALUE;
+  const health_cost = spendMoney(cost);
+  currentPlayersMoney -= cost;
+  endRound();
 }
 
-function increasePlayerStamina(staminaValue) {
-  playerStaminaBar.value = +playerStaminaBar.value + staminaValue;
+function refillStaminaHandler() {
+  let staminaValue;
+  let moneySpent;
+  if (currentPlayerStamina >= chosenMaxStamina - STAMINA_REFILL) {
+    alert("Þú getur ekki fyllt á þolið þitt meira en hámarks þolið þitt er");
+    staminaValue = chosenMaxStamina - currentPlayerStamina;
+  } else if (currentPlayersMoney < 0) {
+    alert("Þú átt ekki nógu mikinn pening");
+  } else {
+    moneySpent = STAMINA_COST;
+    staminaValue = STAMINA_REFILL;
+  }
+  increasePlayerStamina(STAMINA_REFILL);
+  currentPlayerStamina += STAMINA_REFILL;
+  currentPlayersMoney -= moneySpent;
+  endRound();
 }
 
-function resetGame(value) {
-  playerHealthBar.value = value;
-  monsterHealthBar.value = value;
-}
-
-function removeBonusLife() {
-  bonusLifeEl.parentNode.removeChild(bonusLifeEl);
-}
-
-function setPlayerHealth(health) {
-  playerHealthBar.value = health;
-}
+attackBtn.addEventListener("click", attackHandler);
+strongAttackBtn.addEventListener("click", strongAttackHandler);
+healBtn.addEventListener("click", healPlayerHandler);
+staminaBTN.addEventListener("click", refillStaminaHandler);
