@@ -12,14 +12,20 @@
   <body>
     <section id="health-levels">
       <h2>Líf skrímsli</h2>
+    <section id="Player">
       <progress id="monster-health" max="100" value="100">100%</progress>
       <h2>Líf leikmanns<span id="bonus-life">1</span></h2>
       <progress id="player-health" max="100" value="100">100%</progress>
+      <h2>Þol leikmanns</h2>
+      <progress id="player-stamina" max="100" value="100">100%</progress>
+      <h2>Peningar</h2>
+      <progress id="player-cash" max="100" value="100">100%</progress>
     </section>
     <section id="controls">
       <button id="attack-btn">Árás</button>
       <button id="strong-attack-btn">Sterk árás</button>
       <button id="heal-btn">Lækna</button>
+      <button id = "stamina-btn">Meira þol</button>
       <button id="log-btn">Sýna gögn</button>
     </section>
   </body>
